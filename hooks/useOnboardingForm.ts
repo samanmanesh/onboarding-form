@@ -153,7 +153,8 @@ export const useOnboardingForm = () => {
 
       if (
         formData.corporationNumber &&
-        (!corporationQuery.data || !corporationQuery.data.valid)
+        corporationQuery.data !== undefined &&
+        !corporationQuery.data.valid
       ) {
         return false;
       }
@@ -189,7 +190,6 @@ export const useOnboardingForm = () => {
     }
 
     formSubmission.mutate(formData);
-
     return true;
   }, [formData, validateForm, corporationQuery.data, formSubmission]);
 

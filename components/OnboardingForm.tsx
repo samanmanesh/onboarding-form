@@ -35,14 +35,25 @@ export const OnboardingForm: React.FC = () => {
         if (value === "+") {
           value = "+1";
         } else if (value.startsWith("+1")) {
-          value = "+1" + value.slice(2).replace(/[^\d]/g, "");
+          // Extract only digits after +1 and limit to 10 digits
+          const digits = value.slice(2).replace(/[^\d]/g, "").slice(0, 10);
+          value = "+1" + digits;
         } else if (value.startsWith("+")) {
-          value = "+1" + value.slice(1).replace(/[^\d]/g, "");
+          // Extract only digits after + and limit to 10 digits
+          const digits = value.slice(1).replace(/[^\d]/g, "").slice(0, 10);
+          value = "+1" + digits;
         } else if (value.startsWith("1")) {
-          value = "+1" + value.slice(1).replace(/[^\d]/g, "");
+          // If starts with 1, treat it as country code and remove it, limit to 10 digits
+          const digits = value.slice(1).replace(/[^\d]/g, "").slice(0, 10);
+          value = "+1" + digits;
         } else if (value.length > 0) {
-          value = "+1" + value.replace(/[^\d]/g, "");
-        } else if (value.length > MAX_PHONE_LENGTH) {
+          // Extract only digits and add +1 prefix, limit to 10 digits
+          const digits = value.replace(/[^\d]/g, "").slice(0, 10);
+          value = "+1" + digits;
+        }
+
+        // Final length limit check
+        if (value.length > MAX_PHONE_LENGTH) {
           value = value.slice(0, MAX_PHONE_LENGTH);
         }
       }
@@ -74,7 +85,7 @@ export const OnboardingForm: React.FC = () => {
 
   useEffect(() => {
     if (isSubmissionSuccessful) {
-      setStep(step + 1);
+      setStep(2);
     }
   }, [isSubmissionSuccessful]);
 
@@ -228,12 +239,17 @@ export const OnboardingForm: React.FC = () => {
             <Button
               type="submit"
               disabled={isSubmitting || isValidatingCorporation}
-              className="w-full h-12  rounded-lg cursor-pointer mt-2"
+              className="w-full h-12  rounded-lg cursor-pointer mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-8 w-8 animate-spin mr-2 color-white" />
                   Submitting...
+                </>
+              ) : isValidatingCorporation ? (
+                <>
+                  <Loader2 className="h-8 w-8 animate-spin mr-2 color-white" />
+                  Validating corporation number...
                 </>
               ) : (
                 <>
