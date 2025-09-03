@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useOnboardingForm } from "@/hooks/useOnboardingForm";
@@ -35,7 +35,7 @@ export const OnboardingForm: React.FC = () => {
       if (field === "phone") {
         // Handle different input scenarios
         if (value === "+") {
-          // User just typed "+", auto-complete to "+1"
+          // User just typed "+", auto complete to "+1"
           value = "+1";
         } else if (value.startsWith("+1")) {
           // Already has +1, only allow digits after +1
@@ -44,7 +44,7 @@ export const OnboardingForm: React.FC = () => {
           // User typed + and something else, force to +1 and keep digits
           value = "+1" + value.slice(1).replace(/[^\d]/g, "");
         } else if (value.length > 0) {
-          // User typing without +, auto-add +1 prefix
+          // User typing without +, auto add +1 prefix
           value = "+1" + value.replace(/[^\d]/g, "");
         }
         // Limit to +1 + 10 digits
@@ -80,7 +80,7 @@ export const OnboardingForm: React.FC = () => {
     await submitForm();
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isSubmissionSuccessful) {
       setStep(step + 1);
     }

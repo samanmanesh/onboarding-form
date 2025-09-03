@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { FormErrors } from "@/types";
-import { formSchema, type FormSchema } from "@/lib/validation";
+import { formSchema, MAX_CORPORATION_NUMBER_LENGTH, type FormSchema } from "@/lib/validation";
 import { z } from "zod";
 import { useCorporationValidation, useFormSubmission } from "./useFormQueries";
 
@@ -48,33 +48,8 @@ export const useOnboardingForm = () => {
     shouldValidateCorporation
   );
 
-  const formSubmission = useFormSubmission();
-
-  // Handle corporation validation results
-  useEffect(() => {
-    if (corporationQuery.data) {
-      if (!corporationQuery.data.valid) {
-        setErrors((prev) => ({
-          ...prev,
-          corporationNumber:
-            corporationQuery.data?.message || "Invalid corporation number",
-        }));
-      } else {
-        setErrors((prev) => ({ ...prev, corporationNumber: undefined }));
-      }
-    }
-
-    if (corporationQuery.error) {
-      setErrors((prev) => ({
-        ...prev,
-        corporationNumber: "Failed to validate corporation number",
-      }));
-    }
-  }, [corporationQuery.data, corporationQuery.error]);
-
-  // Handle form submission results
-  useEffect(() => {
-    if (formSubmission.isSuccess) {
+  const formSubmission = useFormSubmission({
+    onSuccess: () => {
       setFormData({
         firstName: "",
         lastName: "",
@@ -83,10 +58,9 @@ export const useOnboardingForm = () => {
       });
       setErrors({});
       setShouldValidateCorporation(false);
-    }
-
-    if (formSubmission.error) {
-      const parsedError = parseServerError(formSubmission.error?.message || "");
+    },
+    onError: (error: Error) => {
+      const parsedError = parseServerError(error.message || "");
       if (parsedError) {
         setErrors((prev) => ({
           ...prev,
@@ -95,11 +69,39 @@ export const useOnboardingForm = () => {
       } else {
         setErrors((prev) => ({
           ...prev,
-          general: formSubmission.error?.message || "Submission failed",
+          general: error.message || "Submission failed",
         }));
       }
+    },
+  });
+
+  // Derive corporation validation error from query state
+  const corporationValidationError = useMemo(() => {
+    if (corporationQuery.error) {
+      return "Failed to validate corporation number";
     }
-  }, [formSubmission.isSuccess, formSubmission.error]);
+    if (corporationQuery.data && !corporationQuery.data.valid) {
+      return corporationQuery.data.message || "Invalid corporation number";
+    }
+    return undefined;
+  }, [corporationQuery.data, corporationQuery.error]);
+
+  // Merge corporation validation error with other errors
+  const allErrors = useMemo(() => {
+    const mergedErrors = { ...errors };
+    if (corporationValidationError) {
+      mergedErrors.corporationNumber = corporationValidationError;
+    } else if (shouldValidateCorporation && corporationQuery.data?.valid) {
+      // Clear corporation error when validation is successful
+      delete mergedErrors.corporationNumber;
+    }
+    return mergedErrors;
+  }, [
+    errors,
+    corporationValidationError,
+    shouldValidateCorporation,
+    corporationQuery.data,
+  ]);
 
   const updateField = useCallback(
     (field: keyof FormSchema, value: string) => {
@@ -122,7 +124,7 @@ export const useOnboardingForm = () => {
         const fieldSchema = formSchema.shape[field];
         fieldSchema.parse(value);
 
-        if (field === "corporationNumber" && value.length === 9) {
+        if (field === "corporationNumber" && value.length === MAX_CORPORATION_NUMBER_LENGTH) {
           setShouldValidateCorporation(true);
         } else {
           setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -193,7 +195,7 @@ export const useOnboardingForm = () => {
 
   return {
     formData,
-    errors,
+    errors: allErrors,
     isSubmitting: formSubmission.isPending,
     isValidatingCorporation: corporationQuery.isFetching,
     updateField,
