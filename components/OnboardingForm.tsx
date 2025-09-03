@@ -31,29 +31,22 @@ export const OnboardingForm: React.FC = () => {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       let value = e.target.value;
 
-      // Handle phone number formatting - only allow +1 prefix and digits
       if (field === "phone") {
-        // Handle different input scenarios
         if (value === "+") {
-          // User just typed "+", auto complete to "+1"
           value = "+1";
         } else if (value.startsWith("+1")) {
-          // Already has +1, only allow digits after +1
           value = "+1" + value.slice(2).replace(/[^\d]/g, "");
         } else if (value.startsWith("+")) {
-          // User typed + and something else, force to +1 and keep digits
+          value = "+1" + value.slice(1).replace(/[^\d]/g, "");
+        } else if (value.startsWith("1")) {
           value = "+1" + value.slice(1).replace(/[^\d]/g, "");
         } else if (value.length > 0) {
-          // User typing without +, auto add +1 prefix
           value = "+1" + value.replace(/[^\d]/g, "");
-        }
-        // Limit to +1 + 10 digits
-        if (value.length > MAX_PHONE_LENGTH) {
+        } else if (value.length > MAX_PHONE_LENGTH) {
           value = value.slice(0, MAX_PHONE_LENGTH);
         }
       }
 
-      // Handle corporation number - only digits, max 9 chars
       if (field === "corporationNumber") {
         value = value.replace(/\D/g, "");
         if (value.length > MAX_CORPORATION_NUMBER_LENGTH) {
@@ -61,7 +54,6 @@ export const OnboardingForm: React.FC = () => {
         }
       }
 
-      // Handle name fields - limits typing beyond 50 chars for validation
       if (field === "firstName" || field === "lastName") {
         if (value.length > MAX_NAME_LENGTH) {
           value = value.slice(0, MAX_NAME_LENGTH);
@@ -87,7 +79,7 @@ export const OnboardingForm: React.FC = () => {
   }, [isSubmissionSuccessful]);
 
   return (
-    <div className="max-w-3xl w-full bg-neutral-100 px-20 py-10  h-full rounded flex flex-col items-center justify-center">
+    <div className="max-w-3xl w-full bg-neutral-100 px-24 py-10  h-full rounded flex flex-col items-center justify-center">
       <p className="text-semibold text-xl mb-26">
         Step {step} of {steps.length}
       </p>
@@ -97,12 +89,12 @@ export const OnboardingForm: React.FC = () => {
             Onboarding Form
           </h1>
 
-          <form onSubmit={handleSubmit} className="space-y-6 w-full">
+          <form onSubmit={handleSubmit} className="space-y-5 w-full">
             <div className="flex gap-6 w-full justify-between ">
               <div className="w-full">
                 <label
                   htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700 mb-2 w-full"
+                  className="block text-sm font-medium text-gray-700 mb-1 w-full"
                 >
                   First Name
                 </label>
@@ -114,7 +106,7 @@ export const OnboardingForm: React.FC = () => {
                   onBlur={handleBlur("firstName")}
                   placeholder="Enter your first name"
                   className={`
-                     h-12 rounded-lg
+                     h-12 rounded-lg 
                  ${errors.firstName ? "border-red-500 aria-invalid" : ""}`}
                   aria-invalid={!!errors.firstName}
                   aria-describedby={
@@ -131,7 +123,7 @@ export const OnboardingForm: React.FC = () => {
               <div className="w-full">
                 <label
                   htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Last Name
                 </label>
@@ -161,7 +153,7 @@ export const OnboardingForm: React.FC = () => {
             <div>
               <label
                 htmlFor="phone"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Phone Number
               </label>
@@ -189,7 +181,7 @@ export const OnboardingForm: React.FC = () => {
             <div>
               <label
                 htmlFor="corporationNumber"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Corporation Number
               </label>
@@ -236,17 +228,17 @@ export const OnboardingForm: React.FC = () => {
             <Button
               type="submit"
               disabled={isSubmitting || isValidatingCorporation}
-              className="w-full h-12 rounded-lg cursor-pointer"
+              className="w-full h-12  rounded-lg cursor-pointer mt-2"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-8 w-8 animate-spin mr-2 color-white" />
                   Submitting...
                 </>
               ) : (
                 <>
                   Submit
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-12 w-12" />
                 </>
               )}
             </Button>
@@ -254,13 +246,14 @@ export const OnboardingForm: React.FC = () => {
         </div>
       )}
       {step === 2 && (
-        <div className="flex flex-col items-center justify-center p-8 rounded-xl border mb-auto bg-white mt-24 gap-8 ">
+        <div className="flex flex-col items-center justify-center p-8 rounded-2xl border mb-auto bg-white mt-24 gap-8 ">
           <h1 className="text-3xl text-gray-900  text-center mb-4">
             Your profile has been submitted successfully
           </h1>
           <p className="text-sm text-gray-500 text-center my-auto ">
-            Please wait for the admin to review your profile You will receive an
-            email once your profile is approved
+            Please wait for the admin to review your profile.
+            <br />
+            You will receive an email once your profile is approved
           </p>
 
           <Button
@@ -268,7 +261,7 @@ export const OnboardingForm: React.FC = () => {
             className="w-full h-12 rounded-lg cursor-pointer"
           >
             {" "}
-            <ArrowLeft className="h-4 w-4" /> Try again
+            <ArrowLeft className="h-8 w-8" /> Try again
           </Button>
         </div>
       )}
