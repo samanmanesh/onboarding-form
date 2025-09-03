@@ -1,11 +1,38 @@
 import { useState, useCallback, useEffect } from "react";
-import { FormData, FormErrors } from "@/types";
-import { formSchema } from "@/lib/validation";
+import { FormErrors } from "@/types";
+import { formSchema, type FormSchema } from "@/lib/validation";
 import { z } from "zod";
 import { useCorporationValidation, useFormSubmission } from "./useFormQueries";
 
+const parseServerError = (
+  message: string
+): { field: keyof FormSchema; message: string } | null => {
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes("phone") || lowerMessage.includes("phone number")) {
+    return { field: "phone", message };
+  }
+  if (
+    lowerMessage.includes("first name") ||
+    lowerMessage.includes("firstname")
+  ) {
+    return { field: "firstName", message };
+  }
+  if (lowerMessage.includes("last name") || lowerMessage.includes("lastname")) {
+    return { field: "lastName", message };
+  }
+  if (
+    lowerMessage.includes("corporation") ||
+    lowerMessage.includes("corporation number")
+  ) {
+    return { field: "corporationNumber", message };
+  }
+
+  return null;
+};
+
 export const useOnboardingForm = () => {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<FormSchema>({
     firstName: "",
     lastName: "",
     phone: "",
@@ -59,15 +86,23 @@ export const useOnboardingForm = () => {
     }
 
     if (formSubmission.error) {
-      setErrors((prev) => ({
-        ...prev,
-        general: formSubmission.error?.message || "Submission failed",
-      }));
+      const parsedError = parseServerError(formSubmission.error?.message || "");
+      if (parsedError) {
+        setErrors((prev) => ({
+          ...prev,
+          [parsedError.field]: parsedError.message,
+        }));
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          general: formSubmission.error?.message || "Submission failed",
+        }));
+      }
     }
   }, [formSubmission.isSuccess, formSubmission.error]);
 
   const updateField = useCallback(
-    (field: keyof FormData, value: string) => {
+    (field: keyof FormSchema, value: string) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
 
       if (errors[field]) {
@@ -82,7 +117,7 @@ export const useOnboardingForm = () => {
   );
 
   const validateField = useCallback(
-    async (field: keyof FormData, value: string) => {
+    async (field: keyof FormSchema, value: string) => {
       try {
         const fieldSchema = formSchema.shape[field];
         fieldSchema.parse(value);
@@ -127,7 +162,7 @@ export const useOnboardingForm = () => {
       if (error instanceof z.ZodError) {
         const newErrors: FormErrors = {};
         error.issues?.forEach((issue) => {
-          const field = issue.path[0] as keyof FormData;
+          const field = issue.path[0] as keyof FormSchema;
           newErrors[field] = issue.message;
         });
         setErrors(newErrors);
@@ -151,7 +186,7 @@ export const useOnboardingForm = () => {
       return false;
     }
 
-    formSubmission.mutate(formData);
+    const res = await formSubmission.mutate(formData);
     return true;
   }, [formData, validateForm, corporationQuery.data, formSubmission]);
 
@@ -164,5 +199,6 @@ export const useOnboardingForm = () => {
     validateField,
     submitForm,
     isSubmissionSuccessful: formSubmission.isSuccess,
+    allFieldsAreFilled: Object.values(formData).every((value) => value !== ""),
   };
 };

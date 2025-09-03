@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { validateCorporationNumber, submitProfileDetails } from '@/lib/api'
-import { FormData } from '@/types'
+import { FormSchema } from '@/lib/validation'
 
 export const useCorporationValidation = (corporationNumber: string, enabled: boolean = false) => {
   return useQuery({
@@ -13,6 +13,6 @@ export const useCorporationValidation = (corporationNumber: string, enabled: boo
 
 export const useFormSubmission = () => {
   return useMutation({
-    mutationFn: (formData: FormData) => submitProfileDetails(formData),
+    mutationFn: (formData: FormSchema) => submitProfileDetails(formData),
   })
 }
