@@ -236,6 +236,12 @@ export const OnboardingForm: React.FC = () => {
               )}
             </div>
 
+            {errors.general && (
+              <p className="text-sm text-red-600 mt-2">
+                {errors.general}
+              </p>
+            )}
+
             <Button
               type="submit"
               disabled={isSubmitting || isValidatingCorporation}
