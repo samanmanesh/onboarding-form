@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useOnboardingForm } from "@/hooks/useOnboardingForm";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
-
-const MAX_NAME_LENGTH = 50;
-const MAX_CORPORATION_NUMBER_LENGTH = 9;
-const MAX_PHONE_LENGTH = 12;
+import {
+  MAX_CORPORATION_NUMBER_LENGTH,
+  MAX_NAME_LENGTH,
+  MAX_PHONE_LENGTH,
+} from "@/lib/validation";
 
 export const OnboardingForm: React.FC = () => {
   const {
@@ -20,11 +21,10 @@ export const OnboardingForm: React.FC = () => {
     validateField,
     submitForm,
     isSubmissionSuccessful,
-    allFieldsAreFilled,
   } = useOnboardingForm();
 
   const [step, setStep] = useState(1 as number);
-  const steps = [1, 2, 3, 4, 5];
+  const steps = [1, 2];
 
   const handleInputChange =
     (field: keyof typeof formData) =>
@@ -33,10 +33,19 @@ export const OnboardingForm: React.FC = () => {
 
       // Handle phone number formatting - only allow +1 prefix and digits
       if (field === "phone") {
-        if (value && !value.startsWith("+1")) {
-          value = "+1" + value.replace(/\D/g, "");
-        } else {
-          value = value.replace(/[^\d+]/g, "");
+        // Handle different input scenarios
+        if (value === "+") {
+          // User just typed "+", auto-complete to "+1"
+          value = "+1";
+        } else if (value.startsWith("+1")) {
+          // Already has +1, only allow digits after +1
+          value = "+1" + value.slice(2).replace(/[^\d]/g, "");
+        } else if (value.startsWith("+")) {
+          // User typed + and something else, force to +1 and keep digits
+          value = "+1" + value.slice(1).replace(/[^\d]/g, "");
+        } else if (value.length > 0) {
+          // User typing without +, auto-add +1 prefix
+          value = "+1" + value.replace(/[^\d]/g, "");
         }
         // Limit to +1 + 10 digits
         if (value.length > MAX_PHONE_LENGTH) {
@@ -226,9 +235,7 @@ export const OnboardingForm: React.FC = () => {
 
             <Button
               type="submit"
-              disabled={
-                isSubmitting || isValidatingCorporation || !allFieldsAreFilled
-              }
+              disabled={isSubmitting || isValidatingCorporation}
               className="w-full h-12 rounded-lg cursor-pointer"
             >
               {isSubmitting ? (

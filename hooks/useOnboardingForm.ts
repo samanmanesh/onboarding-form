@@ -186,7 +186,8 @@ export const useOnboardingForm = () => {
       return false;
     }
 
-    const res = await formSubmission.mutate(formData);
+    formSubmission.mutate(formData);
+
     return true;
   }, [formData, validateForm, corporationQuery.data, formSubmission]);
 
@@ -199,6 +200,5 @@ export const useOnboardingForm = () => {
     validateField,
     submitForm,
     isSubmissionSuccessful: formSubmission.isSuccess,
-    allFieldsAreFilled: Object.values(formData).every((value) => value !== ""),
   };
 };
